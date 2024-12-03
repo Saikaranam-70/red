@@ -5,10 +5,6 @@ const userSchema = new mongoose.Schema({
         type:String,
         required:true
     },
-    password:{
-        type:String,
-        required:true
-    },
     mobilenumber:{
         type:String,
         required:true
@@ -21,6 +17,10 @@ const userSchema = new mongoose.Schema({
         required:true,
         type:String
     },
+    country:{
+        type:String,
+        required:true
+    },
     state:{
         type:String,
         required:true
@@ -28,6 +28,9 @@ const userSchema = new mongoose.Schema({
     city:{
         type:String,
         required:true
+    },
+    profile:{
+        type:String
     }
 })
 const User = mongoose.model('User', userSchema);

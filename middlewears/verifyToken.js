@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken')
-const User = require('../models/User')
+const Donor = require('../models/Donor')
 const dotEnv = require('dotenv')
 
 dotEnv.config()
@@ -9,7 +9,7 @@ const verifyToken = async(req, res, next)=>{
     const token = req.headers.token;
     try {
         const decoded = jwt.verify(token, secretKey);
-        const user = await User.findById(decoded.userId)
+        const user = await Donor.findById(decoded.userId)
         if(!user){
             return res.status(400).json({message:"User Not Found"})
         }
@@ -21,4 +21,4 @@ const verifyToken = async(req, res, next)=>{
     }
 }
 
-module.exports = verifyToken
+module.exports = {verifyToken}

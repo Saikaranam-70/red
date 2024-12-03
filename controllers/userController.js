@@ -2,30 +2,47 @@ const User = require('../models/User')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken');
 const dotEnv = require('dotenv')
+const multer = require('multer')
+const path = require('path')
+const Donor = require('../models/Donor')
 
 dotEnv.config();
 const secretKey = process.env.MY_NAME
 
+const storage = multer.diskStorage({
+    destination: function(req, file, cb) {
+        cb(null, 'uploads/'); // Destination folder where the uploaded images will be stored
+    },
+    filename: function(req, file, cb) {
+        cb(null, Date.now() + path.extname(file.originalname)); // Generating a unique filename
+    }
+});
+
+const upload = multer({ storage: storage });
 
 const addUser = async(req, res)=>{
-    const {email, password, name,mobilenumber, bloodgroup, state, city} = req.body;
+    const {email,name,mobilenumber, bloodgroup,country, state, city} = req.body;
+    const profile = req.file ? req.file.filename : undefined;
 
     try {
         const user = await User.findOne({email})
+        const userByEmail = await Donor.findOne({email})
         if(user){
             return res.status(400).json({message:"email already exists"})
         }
-        const hashedPassword = await bcrypt.hash(password, 10)
+        
         const usersSchema = new User({
             email, 
-            password:hashedPassword,
             name,
             mobilenumber,
             bloodgroup,
+            country,
             state,
-            city
+            city,
+            profile,
         })
         await usersSchema.save();
+        
         res.status(200).json({success:"User Added successfully"})
     } catch (error) {
         console.log(error)
@@ -53,17 +70,61 @@ const loginUser = async(req, res)=>{
     }
 }
 const getDonors = async(req, res)=>{
-    const {state, city, bloodgroup} = req.body;
+   const {country, state, city, bloodgroup} = req.body
+   console.log("body", req.body)
     try {
-        const donor = await User.find({state, city, bloodgroup})
+        const donor = await User.find({country, state, city, bloodgroup})
         if(!donor){
             return res.status(400).json({message:"Donor not found"})
         }
         res.status(200).json({donor})
     } catch (error) {
         console.log(error)
-        res.status(500).json("Internal Server Error")
+        return res.status(500).json("Internal Server Error")
+    }
+}
+const getUserById = async(req, res)=>{
+    const userId = req.params.userId;
+    try {
+        const user = await User.findById(userId);
+        if(!user){
+            return res.status(400).json({message: "User not Found"})
+        }
+        res.status(200).json({user})
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json("Internal Server Error")
     }
 }
 
-module.exports ={addUser, loginUser, getDonors}
+const getUserByEmail = async(req, res)=>{
+    const email = req.params.email;
+    try{
+        const user = await User.find({email})
+        if(!user){
+            return res.status(400).json({message: "User not Found"})
+        }
+        res.status(200).json({user})
+    }
+     catch (error) {
+    console.log(error)
+    return res.status(500).json("Internal Server Error")
+}
+}
+
+
+const deleteDonorById = async(req, res)=>{
+    const donorId = req.params.donorId;
+    try {
+        const user = await User.findByIdAndDelete(donorId);
+        if(!user){
+            return res.status(400).json({message: "donor not found"})
+        }
+        res.status(200).json("deleted successfully")
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json("Internal Server Error")
+    }
+}
+
+module.exports ={addUser : [upload.single('profile'), addUser], loginUser, getDonors, getUserById, deleteDonorById, getUserByEmail}
